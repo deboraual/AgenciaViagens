@@ -117,10 +117,44 @@ class View:
                 messagebox.showerror("erro","password errada")
 
     def home(self):
-        self.frame = tk.Frame(self.master, bg="#f0f0f0")
-        self.frame.pack(fill="both", expand=True)
+        if self.frame:
+            self.frame.destroy()
+            
+        self.frame = tk.Frame(self.master, bg='#696969')
+        self.frame.master.title('Home')
+        self.frame.master.geometry('500x500')
+        self.frame.pack(fill='both', expand=True)    
+        
+        
+        self.frame.columnconfigure(0, weight=1)
+        self.frame.columnconfigure(1, weight=1)
 
         mensagem = f"Bem-vindo(a), {self.cliente_login.get_nome()}!"
-        tk.Label(self.frame, text=mensagem, font=("Arial", 20), bg="#f0f0f0", fg="#333").pack(pady=50)
+        tk.Label(self.frame, text=mensagem, font=("Arial", 15), bg="#696969", fg="#C6C6DC").grid(row=0, column=0, columnspan=2, padx=10, pady=30, sticky='ew')
+        
+        # Lista de caminhos de imagens e países
+        imagens_info = [
+            {"caminho": "imagem1.jpg", "pais": "Portugal"},
+            {"caminho": "imagem2.jpg", "pais": "Espanha"},
+            {"caminho": "imagem3.jpg", "pais": "França"},
+            {"caminho": "imagem4.jpg", "pais": "Itália"},
+        ]
 
-        tk.Button(self.frame, text="Sair", command=self.master.destroy).pack(pady=20)
+        self.imagens_tk = []  # Guardar referências para evitar garbage collection
+
+        for i, info in enumerate(imagens_info):
+            row = i // 2
+            col = i % 2
+
+            try:
+                img = Image.open(info["caminho"])
+                img = img.resize((100, 100), Image.LANCZOS)
+                img_tk = ImageTk.PhotoImage(img)
+                self.imagens_tk.append(img_tk)
+
+                tk.Label(self.frame, image=img_tk, bg="#696969").grid(row=row*2+1, column=col, padx=20, pady=(10, 5), sticky='n')
+            except Exception:
+                # Caso não tenha imagem ainda
+                tk.Label(self.frame, text="Sem imagem", width=15, height=6, bg="#999").grid(row=row*2+1, column=col, padx=20, pady=(10, 5), sticky='n')
+
+            tk.Label(self.frame, text=info["pais"], bg="#696969", fg="white", font=("Arial", 12)).grid(row=row*2+2, column=col, padx=40, pady=(0, 20),sticky='n')
