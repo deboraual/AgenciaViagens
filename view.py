@@ -219,6 +219,7 @@ class View:
             else:
                 messagebox.showerror("erro","password errada")
 
+        
     def home(self):
         if self.frame:
             self.frame.destroy()
