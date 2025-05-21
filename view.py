@@ -7,12 +7,10 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import seaborn as sns
 import json
-
+import requests
 import hashlib
 
-
-
-
+from io import BytesIO
 from PIL import Image, ImageTk
 from model.Cliente import *
 from model.LinkedClient import *
@@ -20,6 +18,8 @@ import os
 class View:
     def __init__(self, master):
         self.master = master
+
+
 
         #criar linked list
         self.clientes = LinkedClient()
@@ -48,7 +48,7 @@ class View:
                 host='127.0.0.1',
                 port=3306,
                 user='root',
-                password='123456',
+                password='5218Debora',
                 database='travelbuddy',
                 auth_plugin='mysql_native_password'
             )
@@ -57,6 +57,21 @@ class View:
             messagebox.showerror("Erro", f"Erro na ligação:\n{erro}")
             return None
     
+
+        #API -> ligação 
+    def autenticar_amadeus(self):
+        url = "https://test.api.amadeus.com/v1/security/oauth2/token"
+        data = {
+            "grant_type": "client_credentials",
+            "client_id": self.amadeus_key,
+            "client_secret": self.amadeus_secret
+        }
+        try:
+            response = requests.post(url, data=data)    
+            self.amadeus_token = response.json().get("access_token")
+        except Exception as e:
+            messagebox.showerror("Erro Amadeus", f"Erro ao autenticar: {e}")
+
     def registo(self):
         janela_registo = tk.Toplevel(self.master)
         janela_registo.title("Registo")
@@ -83,7 +98,7 @@ class View:
         password_repetida_entry = tk.Entry(nova_frame, show="*", font=("Arial",14))
         password_repetida_entry.grid(row=3, column=1, sticky="ew", padx=10, pady=5)
 
-        # <-- AQUI VEM A LINHA QUE VOCÊ PERGUNTOU -->
+        
         tk.Button(
             nova_frame,
             text="Registar",
@@ -202,7 +217,7 @@ class View:
                 cursor.close()
                 conexao.close()
 
-
+        
     def ir_para_home(self, janela_login, nome, password):
 
         if nome and password:
@@ -219,7 +234,6 @@ class View:
             else:
                 messagebox.showerror("erro","password errada")
 
-        
     def home(self):
         if self.frame:
             self.frame.destroy()
