@@ -10,11 +10,11 @@ import json
 import requests
 import hashlib
 
-from io import BytesIO
 from PIL import Image, ImageTk
 from model.Cliente import *
 from model.LinkedClient import *
-import os
+from model.Paises import *
+
 class View:
     def __init__(self, master):
         self.master = master
@@ -243,22 +243,39 @@ class View:
         self.frame.master.geometry('500x500')
         self.frame.pack(fill='both', expand=True)    
         
-        
-        self.frame.columnconfigure(0, weight=1)
-        self.frame.columnconfigure(1, weight=1)
+        #puxar para sima 
+        canvas = tk.Canvas(self.frame, bg='#696969', highlightthickness=0)
+        scrollbar = tk.Scrollbar(self.frame, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+        self.frame.update_idletasks()
+
+        scrollable_frame = tk.Frame(canvas, bg='#696969')
+
+        scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="n", width=self.frame.winfo_width())
+
+
 
         mensagem = f"Bem-vindo(a), {self.cliente_login.get_nome()}!"
-        tk.Label(self.frame, text=mensagem, font=("Arial", 15), bg="#696969", fg="#C6C6DC").grid(row=0, column=0, columnspan=2, padx=10, pady=30, sticky='ew')
-        
-        # Lista de caminhos de imagens e países
+        tk.Label(scrollable_frame, text=mensagem, font=("Arial", 15), bg="#696969", fg="#C6C6DC").grid(row=0, column=0, columnspan=2, padx=10, pady=30, sticky='ew')
+
+        # Lista de imagens e países
         imagens_info = [
-            {"caminho": "imagem1.jpg", "pais": "Portugal"},
-            {"caminho": "imagem2.jpg", "pais": "Espanha"},
-            {"caminho": "imagem3.jpg", "pais": "França"},
-            {"caminho": "imagem4.jpg", "pais": "Itália"},
+            {"caminho": "imagens/portugal.jpg", "pais_obj": paises[0]},
+            {"caminho": "imagens/espanha.jpg", "pais_obj": paises[1]},
+            {"caminho": "imagens/franca.jpg", "pais_obj": paises[2]},
+            {"caminho": "imagens/italia.jpg", "pais_obj": paises[3]},
+            {"caminho": "imagens/alemanha.jpg", "pais_obj": paises[4]},
+            # Adiciona mais aqui se necessário
         ]
 
-        self.imagens_tk = []  # Guardar referências para evitar garbage collection
+        self.imagens_tk = []
+
+        for col in range(2):
+            scrollable_frame.columnconfigure(col, weight=1)
 
         for i, info in enumerate(imagens_info):
             row = i // 2
@@ -270,9 +287,19 @@ class View:
                 img_tk = ImageTk.PhotoImage(img)
                 self.imagens_tk.append(img_tk)
 
-                tk.Label(self.frame, image=img_tk, bg="#696969").grid(row=row*2+1, column=col, padx=20, pady=(10, 5), sticky='n')
-            except Exception:
-                # Caso não tenha imagem ainda
-                tk.Label(self.frame, text="Sem imagem", width=15, height=6, bg="#999").grid(row=row*2+1, column=col, padx=20, pady=(10, 5), sticky='n')
+                tk.Label(scrollable_frame, image=img_tk, bg="#696969").grid(
+                    row=row*3+1, column=col, padx=60, pady=(10, 5), sticky='n'
+                )
 
-            tk.Label(self.frame, text=info["pais"], bg="#696969", fg="white", font=("Arial", 12)).grid(row=row*2+2, column=col, padx=40, pady=(0, 20),sticky='n')
+            except Exception:
+                tk.Label(scrollable_frame, text="Sem imagem", width=15, height=6, bg="#999").grid(
+                    row=row*3+1, column=col, padx=60, pady=(10, 5), sticky='n'
+                )
+
+            nome_pais = info["pais_obj"].nome
+            custo = info["pais_obj"].custo_viagem
+            texto = f"{nome_pais}\nCusto: €{custo}"
+
+            tk.Label(scrollable_frame, text=texto, bg="#696969", fg="white", font=("Arial", 12)).grid(
+                row=row*3+2, column=col, padx=60, pady=(0, 20), sticky='n'
+            )
