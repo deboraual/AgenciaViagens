@@ -257,6 +257,36 @@ class View:
         scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
         canvas.create_window((0, 0), window=scrollable_frame, anchor="n", width=self.frame.winfo_width())
 
+        # Barra no topo com ícone de carrinho
+        top_bar = tk.Frame(self.frame, bg="#505050", height=40)
+        top_bar.pack(side="top", fill="x")
+
+        # Carrinho com imagem (opcional)
+        try:
+            cart_img = Image.open("imagens/carrinho.png")  # Usa o caminho correto para tua imagem
+            cart_img = cart_img.resize((24, 24), Image.LANCZOS)
+            self.cart_icon = ImageTk.PhotoImage(cart_img)
+
+            cart_btn = tk.Button(
+                top_bar,
+                image=self.cart_icon,
+                bg="#505050",
+                relief="flat",
+                command=self.abrir_carrinho  # Define este método se quiser funcionalidade
+            )
+            cart_btn.pack(side="right", padx=10, pady=5)
+        except Exception:
+            # Se a imagem falhar, usa emoji ou texto
+            cart_btn = tk.Button(
+                top_bar,
+                text="🛒",
+                bg="#505050",
+                fg="white",
+                font=("Arial", 16),
+                relief="flat",
+                command=self.abrir_carrinho
+            )
+            cart_btn.pack(side="right", padx=10, pady=5)
 
 
         mensagem = f"Bem-vindo(a), {self.cliente_login.get_nome()}!"
@@ -300,6 +330,78 @@ class View:
             custo = info["pais_obj"].custo_viagem
             texto = f"{nome_pais}\nCusto: €{custo}"
 
-            tk.Label(scrollable_frame, text=texto, bg="#696969", fg="white", font=("Arial", 12)).grid(
-                row=row*3+2, column=col, padx=60, pady=(0, 20), sticky='n'
-            )
+            tk.Label(scrollable_frame, text=texto, bg="#696969", fg="white", font=("Arial", 12)).grid(row=row*3+2, column=col, padx=60, pady=(0, 20), sticky='n')
+            btn = tk.Button(scrollable_frame, text="Entrar", font=("Arial", 10), command=lambda pais=info["pais_obj"]: self.pag_paises(pais))
+            btn.grid(row=row*3+3, column=col, padx=60, pady=(0, 20), sticky='n')
+
+
+    def pag_paises(self, paises):
+        if self.frame:
+            self.frame.destroy()
+
+        self.frame = tk.Frame(self.master, bg="#696969")
+        self.frame.pack(fill='both', expand=True)
+        self.frame.master.title(f"{paises.nome} - Pontos Turísticos")
+
+        tk.Label(
+            self.frame,
+            text=f"Pontos turísticos em {paises.nome}",
+            font=("Arial", 16),
+            bg="#696969",
+            fg="white"
+        ).pack(pady=20)
+
+        self.imagens_tk_pontos = []  # lista para manter referências
+
+        for cidade in paises.cidades: 
+            tk.Label(
+                self.frame,
+                text=f"Cidade: {cidade.nome}",
+                font=("Arial", 14, "bold"),
+                bg="#696969",
+                fg="white"
+            ).pack(pady=(10, 0))
+
+            for ponto in cidade.pontos_turisticos:
+                # --- Carregamento da imagem diretamente aqui ---
+                import os
+                from PIL import Image, ImageTk
+
+                caminho_base = "imagens/pontos/"
+                nome_formatado = (
+                    ponto.nome.lower()
+                    .replace(" ", "_")
+                    .replace("ã", "a")
+                    .replace("á", "a")
+                    .replace("â", "a")
+                    .replace("é", "e")
+                    .replace("ê", "e")
+                    .replace("í", "i")
+                    .replace("ó", "o")
+                    .replace("õ", "o")
+                    .replace("ç", "c")
+                )
+                extensoes = [".jpg", ".jpeg", ".png"]
+                img_tk = None
+
+                for ext in extensoes:
+                    caminho = os.path.join(caminho_base, nome_formatado + ext)
+                    if os.path.exists(caminho):
+                        try:
+                            img = Image.open(caminho)
+                            img = img.resize((200, 120), Image.LANCZOS)
+                            img_tk = ImageTk.PhotoImage(img)
+                            self.imagens_tk_pontos.append(img_tk)  # manter referência
+                            break
+                        except Exception as e:
+                            print(f"Erro ao carregar imagem '{caminho}': {e}")
+
+                if img_tk:
+                    tk.Label(self.frame, image=img_tk, bg="#696969").pack(pady=(5, 2))
+                else:
+                    tk.Label(self.frame, text="[Imagem não disponível]")
+
+
+    def abrir_carrinho(self):
+        pass
+  
