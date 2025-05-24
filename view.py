@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from tkinter import messagebox
+from tkinter import messagebox, simpledialog
 import mysql.connector
 from tkinter import filedialog
 import matplotlib.pyplot as plt
@@ -9,17 +9,20 @@ import seaborn as sns
 import json
 import requests
 import hashlib
+import os
 
 from PIL import Image, ImageTk
 from model.Cliente import *
 from model.LinkedClient import *
 from model.Paises import *
+from controller import *
 
 class View:
-    def __init__(self, master):
+    def __init__(self, master, controller):
         self.master = master
-
-
+        self.controller = controller
+        self.carrinho = controller.carrinho
+        #self.carrinho = []
 
         #criar linked list
         self.clientes = LinkedClient()
@@ -257,36 +260,8 @@ class View:
         scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
         canvas.create_window((0, 0), window=scrollable_frame, anchor="n", width=self.frame.winfo_width())
 
-        # Barra no topo com ícone de carrinho
-        top_bar = tk.Frame(self.frame, bg="#505050", height=40)
-        top_bar.pack(side="top", fill="x")
+        self.controller.barra_carrinho(self.frame)
 
-        # Carrinho com imagem (opcional)
-        try:
-            cart_img = Image.open("imagens/carrinho.png")  # Usa o caminho correto para tua imagem
-            cart_img = cart_img.resize((24, 24), Image.LANCZOS)
-            self.cart_icon = ImageTk.PhotoImage(cart_img)
-
-            cart_btn = tk.Button(
-                top_bar,
-                image=self.cart_icon,
-                bg="#505050",
-                relief="flat",
-                command=self.abrir_carrinho  # Define este método se quiser funcionalidade
-            )
-            cart_btn.pack(side="right", padx=10, pady=5)
-        except Exception:
-            # Se a imagem falhar, usa emoji ou texto
-            cart_btn = tk.Button(
-                top_bar,
-                text="🛒",
-                bg="#505050",
-                fg="white",
-                font=("Arial", 16),
-                relief="flat",
-                command=self.abrir_carrinho
-            )
-            cart_btn.pack(side="right", padx=10, pady=5)
 
 
         mensagem = f"Bem-vindo(a), {self.cliente_login.get_nome()}!"
@@ -341,6 +316,9 @@ class View:
 
         self.frame = tk.Frame(self.master, bg="#696969")
         self.frame.pack(fill='both', expand=True)
+        self.controller.barra_carrinho(self.frame, paises)
+
+
         self.frame.master.title(f"{paises.nome} - Pontos Turísticos")
 
         tk.Label(
@@ -363,11 +341,12 @@ class View:
             ).pack(pady=(10, 0))
 
             for ponto in cidade.pontos_turisticos:
-                # --- Carregamento da imagem diretamente aqui ---
-                import os
-                from PIL import Image, ImageTk
 
-                caminho_base = "imagens/pontos/"
+                #criar o cartao dos pontos tutisticos 
+                cartao_frame = tk.Frame(self.frame, bg='#808080', bd=1, relief='solid',padx=10, pady=10)
+                cartao_frame.pack(padx=20, pady=20, fill = 'x')
+
+                caminho_base = "imagens/pontos/" #carregar imagens 
                 nome_formatado = (
                     ponto.nome.lower()
                     .replace(" ", "_")
@@ -380,6 +359,7 @@ class View:
                     .replace("ó", "o")
                     .replace("õ", "o")
                     .replace("ç", "c")
+                    .replace("ü","u")
                 )
                 extensoes = [".jpg", ".jpeg", ".png"]
                 img_tk = None
@@ -391,17 +371,37 @@ class View:
                             img = Image.open(caminho)
                             img = img.resize((200, 120), Image.LANCZOS)
                             img_tk = ImageTk.PhotoImage(img)
-                            self.imagens_tk_pontos.append(img_tk)  # manter referência
+                            self.imagens_tk_pontos.append(img_tk)  
                             break
                         except Exception as e:
                             print(f"Erro ao carregar imagem '{caminho}': {e}")
 
                 if img_tk:
-                    tk.Label(self.frame, image=img_tk, bg="#696969").pack(pady=(5, 2))
+                    tk.Label(cartao_frame, image=img_tk, bg="#808080").pack(side= 'left', padx=(0,10))
                 else:
-                    tk.Label(self.frame, text="[Imagem não disponível]")
+                    tk.Label(cartao_frame, text="[Imagem não disponível]", width=15, height=5, bg='#999').pack(side='left', padx=(0,10))
 
+                texto_frame = tk.Frame(cartao_frame, bg='#808080')
+                texto_frame.pack(side="left", fill="both", expand=True)
 
+                tk.Label(texto_frame, text=ponto.nome, font=("Arial", 12, "bold"), bg="#808080", fg="white").pack(anchor="w")
+                tk.Label(texto_frame, text=f"Localização: {cidade.nome}", font=("Arial", 10), bg="#808080", fg="#DDDDDD").pack(anchor="w", pady=2)
+                tk.Label(texto_frame, text=ponto.descricao, font=("Arial", 10), bg="#808080", fg="#DDDDDD", wraplength=300, justify="left").pack(anchor="w", pady=(5, 0))
+
+    
+
+    
     def abrir_carrinho(self):
-        pass
-  
+        if not self.carrinho:
+            messagebox.showinfo("Carrinho", "O carrinho está vazio.")
+            return
+
+        conteudo = ""
+        total_geral = 0
+        for item in self.carrinho:
+            conteudo += f"{item['quantidade']}x {item['pais']} — €{item['total']:.2f}\n"
+            total_geral += item["total"]
+
+        conteudo += f"\nTotal geral: €{total_geral:.2f}"
+        messagebox.showinfo("Carrinho", conteudo)
+    
