@@ -19,8 +19,10 @@ from controller import *
 
 class View:
     def __init__(self, master, controller):
+        
         self.master = master
         self.controller = controller
+        self.frame = None
         self.carrinho = controller.carrinho
         #self.carrinho = []
 
@@ -60,20 +62,6 @@ class View:
             messagebox.showerror("Erro", f"Erro na ligação:\n{erro}")
             return None
     
-
-        #API -> ligação 
-    def autenticar_amadeus(self):
-        url = "https://test.api.amadeus.com/v1/security/oauth2/token"
-        data = {
-            "grant_type": "client_credentials",
-            "client_id": self.amadeus_key,
-            "client_secret": self.amadeus_secret
-        }
-        try:
-            response = requests.post(url, data=data)    
-            self.amadeus_token = response.json().get("access_token")
-        except Exception as e:
-            messagebox.showerror("Erro Amadeus", f"Erro ao autenticar: {e}")
 
     def registo(self):
         janela_registo = tk.Toplevel(self.master)
@@ -246,26 +234,15 @@ class View:
         self.frame.master.geometry('500x500')
         self.frame.pack(fill='both', expand=True)    
         
-        #puxar para sima 
-        canvas = tk.Canvas(self.frame, bg='#696969', highlightthickness=0)
-        scrollbar = tk.Scrollbar(self.frame, orient="vertical", command=canvas.yview)
-        canvas.configure(yscrollcommand=scrollbar.set)
+        #puxar para sima _ faz com que ignore o canvas 
+        _, scrollable= self.controller.criar_scrollable_frame(self.frame)
 
-        scrollbar.pack(side="right", fill="y")
-        canvas.pack(side="left", fill="both", expand=True)
-        self.frame.update_idletasks()
 
-        scrollable_frame = tk.Frame(canvas, bg='#696969')
-
-        scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="n", width=self.frame.winfo_width())
-
-        self.controller.barra_carrinho(self.frame)
-
+        self.controller.barra_carrinho(self.frame, is_home=True)
 
 
         mensagem = f"Bem-vindo(a), {self.cliente_login.get_nome()}!"
-        tk.Label(scrollable_frame, text=mensagem, font=("Arial", 15), bg="#696969", fg="#C6C6DC").grid(row=0, column=0, columnspan=2, padx=10, pady=30, sticky='ew')
+        tk.Label(scrollable, text=mensagem, font=("Arial", 15), bg="#696969", fg="#C6C6DC").grid(row=0, column=0, columnspan=2, padx=10, pady=30, sticky='ew')
 
         # Lista de imagens e países
         imagens_info = [
@@ -280,7 +257,7 @@ class View:
         self.imagens_tk = []
 
         for col in range(2):
-            scrollable_frame.columnconfigure(col, weight=1)
+            scrollable.columnconfigure(col, weight=1)
 
         for i, info in enumerate(imagens_info):
             row = i // 2
@@ -292,12 +269,12 @@ class View:
                 img_tk = ImageTk.PhotoImage(img)
                 self.imagens_tk.append(img_tk)
 
-                tk.Label(scrollable_frame, image=img_tk, bg="#696969").grid(
+                tk.Label(scrollable, image=img_tk, bg="#696969").grid(
                     row=row*3+1, column=col, padx=60, pady=(10, 5), sticky='n'
                 )
 
             except Exception:
-                tk.Label(scrollable_frame, text="Sem imagem", width=15, height=6, bg="#999").grid(
+                tk.Label(scrollable, text="Sem imagem", width=15, height=6, bg="#999").grid(
                     row=row*3+1, column=col, padx=60, pady=(10, 5), sticky='n'
                 )
 
@@ -305,8 +282,8 @@ class View:
             custo = info["pais_obj"].custo_viagem
             texto = f"{nome_pais}\nCusto: €{custo}"
 
-            tk.Label(scrollable_frame, text=texto, bg="#696969", fg="white", font=("Arial", 12)).grid(row=row*3+2, column=col, padx=60, pady=(0, 20), sticky='n')
-            btn = tk.Button(scrollable_frame, text="Entrar", font=("Arial", 10), command=lambda pais=info["pais_obj"]: self.pag_paises(pais))
+            tk.Label(scrollable, text=texto, bg="#696969", fg="white", font=("Arial", 12)).grid(row=row*3+2, column=col, padx=60, pady=(0, 20), sticky='n')
+            btn = tk.Button(scrollable, text="Pontos Turisticos", font=("Arial", 10), command=lambda pais=info["pais_obj"]: self.pag_paises(pais))
             btn.grid(row=row*3+3, column=col, padx=60, pady=(0, 20), sticky='n')
 
 
@@ -316,35 +293,24 @@ class View:
 
         self.frame = tk.Frame(self.master, bg="#696969")
         self.frame.pack(fill='both', expand=True)
-        self.controller.barra_carrinho(self.frame, paises)
+        self.controller.barra_carrinho(self.frame)
+        _, scroll_frame = self.controller.criar_scrollable_frame(self.frame)
 
 
-        self.frame.master.title(f"{paises.nome} - Pontos Turísticos")
+        self.master.title(f"{paises.nome} - Pontos Turísticos")
 
-        tk.Label(
-            self.frame,
-            text=f"Pontos turísticos em {paises.nome}",
-            font=("Arial", 16),
-            bg="#696969",
-            fg="white"
-        ).pack(pady=20)
+        tk.Label(scroll_frame,text=f"Pontos turísticos em {paises.nome}",font=("Arial", 16),bg="#696969",fg="white").pack(pady=20)
 
-        self.imagens_tk_pontos = []  # lista para manter referências
+        self.imagens_tk_pontos = []  # lista referências
 
         for cidade in paises.cidades: 
-            tk.Label(
-                self.frame,
-                text=f"Cidade: {cidade.nome}",
-                font=("Arial", 14, "bold"),
-                bg="#696969",
-                fg="white"
-            ).pack(pady=(10, 0))
+            tk.Label(scroll_frame,text=f"Cidade: {cidade.nome}",font=("Arial", 14, "bold"),bg="#696969",fg="white").pack(pady=(10, 0))
 
             for ponto in cidade.pontos_turisticos:
 
                 #criar o cartao dos pontos tutisticos 
-                cartao_frame = tk.Frame(self.frame, bg='#808080', bd=1, relief='solid',padx=10, pady=10)
-                cartao_frame.pack(padx=20, pady=20, fill = 'x')
+                cartao_frame = tk.Frame(scroll_frame, bg='#808080', bd=1, relief='solid',padx = 5, pady= 5)
+                cartao_frame.pack(padx=10, pady=10, fill = 'x')
 
                 caminho_base = "imagens/pontos/" #carregar imagens 
                 nome_formatado = (
@@ -369,7 +335,7 @@ class View:
                     if os.path.exists(caminho):
                         try:
                             img = Image.open(caminho)
-                            img = img.resize((200, 120), Image.LANCZOS)
+                            img = img.resize((150, 90), Image.LANCZOS)
                             img_tk = ImageTk.PhotoImage(img)
                             self.imagens_tk_pontos.append(img_tk)  
                             break
@@ -384,9 +350,9 @@ class View:
                 texto_frame = tk.Frame(cartao_frame, bg='#808080')
                 texto_frame.pack(side="left", fill="both", expand=True)
 
-                tk.Label(texto_frame, text=ponto.nome, font=("Arial", 12, "bold"), bg="#808080", fg="white").pack(anchor="w")
-                tk.Label(texto_frame, text=f"Localização: {cidade.nome}", font=("Arial", 10), bg="#808080", fg="#DDDDDD").pack(anchor="w", pady=2)
-                tk.Label(texto_frame, text=ponto.descricao, font=("Arial", 10), bg="#808080", fg="#DDDDDD", wraplength=300, justify="left").pack(anchor="w", pady=(5, 0))
+                tk.Label(texto_frame, text=ponto.nome, font=("Arial", 11, "bold"), bg="#808080", fg="white").pack(anchor="w")
+                tk.Label(texto_frame, text=f"Localização: {cidade.nome}", font=("Arial", 9 ), bg="#808080", fg="#DDDDDD").pack(anchor="w")
+                tk.Label(texto_frame, text=ponto.descricao, font=("Arial", 9), bg="#808080", fg="#DDDDDD", wraplength=250, justify="left").pack(anchor="w", pady=(2, 0))
 
     
 

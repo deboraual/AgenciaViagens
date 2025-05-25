@@ -12,40 +12,72 @@ class Controller:
         self.view = View(master, self)
         self.cart_icon = None
     
-    def barra_carrinho (self,frame, pais=None):
-        top_bar = tk.Frame(frame, bg="#505050", height=40)
-        top_bar.pack(side="top", fill="x")
+    def criar_scrollable_frame(self, frame):
+        canvas = tk.Canvas(frame, bg='#696969', highlightthickness=0)
+        scrollbar = tk.Scrollbar(frame, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        scrollable_frame = tk.Frame(canvas, bg='#696969')
+
+        def atualizar_scrollregion(event):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        scrollable_frame.bind("<Configure>", atualizar_scrollregion)
+
+        frame.update_idletasks()  # Garante a largura correta
+        canvas.create_window((frame.winfo_width() // 2, 0), window=scrollable_frame, anchor="n")
+
+        return canvas, scrollable_frame
 
 
-        try:
-            cart_img = Image.open("imagens/carrinho.png")  # Caminho para tua imagem
-            cart_img = cart_img.resize((24, 24), Image.LANCZOS)
-            self.cart_icon = ImageTk.PhotoImage(cart_img)
+    def pesquisar(self, termo):
+        termo = termo.lower()
+        for pais in self.lista_paises:
+            if termo in pais.nome.lower():
+                self.view.pag_paises(pais)
+                return
+            for cidade in pais.cidades:
+                if termo in cidade.nome.lower():
+                    self.view.pag_paises(pais)
+                    return
+                for ponto in cidade.pontos_turisticos:
+                    if termo in ponto.nome.lower():
+                        self.view.pag_paises(pais)
+                        return
+        messagebox.showinfo("Pesquisa", "Nenhum resultado encontrado.")
 
-            cart_btn = tk.Button(
-                top_bar,
-                image=self.cart_icon,
-                bg="#505050",
-                relief="flat",
-                command=self.abrir_carrinho
-            )
-            cart_btn.pack(side="right", padx=10, pady=5)
-        except Exception:
-            cart_btn = tk.Button(
-                top_bar,
-                text="🛒",
-                bg="#505050",
-                fg="white",
-                font=("Arial", 16),
-                relief="flat",
-                command=self.abrir_carrinho
-            )
-            cart_btn.pack(side="right", padx=10, pady=5)
-        if pais is not None:
-            comprar_btn = tk.Button(top_bar,text="Comprar Viagem",font=("Arial", 10, "bold"),bg="#4CAF50",fg="white",command=lambda: self.comprar_viagem(pais))
-            comprar_btn.pack(side="right", padx=10, pady=5)
-            btn_voltar = tk.Button(top_bar,text="X",font=("Arial", 12, "bold"),bg="#505050",fg="white",relief="flat",command=self.voltar_home)
-            btn_voltar.pack(side="left", padx=10, pady=5)
+    def barra_carrinho(self, frame, is_home = False):
+            top_bar = tk.Frame(frame, bg="#505050", height=100)
+            top_bar.place(relx=0, rely=0, relwidth=1.0)
+            voltar_btn = tk.Button(top_bar, text="❌", command=self.voltar_home, bg="red", fg="white")
+            voltar_btn.pack(side="left", padx=10, pady=10)
+
+            if is_home:
+                #adicionar barra de pesquisa
+                self.pesquisa_entry= tk.Entry(top_bar, font=('Arial',12))
+                self.pesquisa_entry.pack(side='left', padx=5, pady=10)
+
+                pesquisar_btn= tk.Button(top_bar, text='Pesquisar', command=lambda: self.pesquisar(self.pesquisa_entry.get()))
+                pesquisar_btn.pack(side='left', padx=10, pady=10)
+
+                #botao para compra 
+                comprar_btn = tk.Button(top_bar, text="Comprar", command=self.abrir_carrinho, bg="green", fg="white")
+                comprar_btn.pack(side="right", padx=10, pady=10)
+
+                #botao abrir carrinho
+                carrinho_btn = tk.Button(top_bar, text="🛒", command=self.abrir_carrinho)
+                carrinho_btn.pack(side="right", padx=10, pady=10)
+            else:
+                #adicionar para coprar nos paises  
+                comprar_btn = tk.Button(top_bar, text="Comprar", command=self.abrir_carrinho, bg="green", fg="white")
+                comprar_btn.pack(side="right", padx=10, pady=10)
+
+                #botao abrir carrinho
+                carrinho_btn = tk.Button(top_bar, text="🛒", command=self.abrir_carrinho)
+                carrinho_btn.pack(side="right", padx=10, pady=10)
 
 
     def abrir_carrinho(self):
@@ -67,7 +99,7 @@ class Controller:
             "Compra de Passagens",
             f"Quantas passagens deseja comprar para {pais.nome}?",
             minvalue=1,
-            parent=self.view.master  # Usa o master da view
+            parent=self.view.master
         )
 
         if quantidade:
@@ -85,3 +117,5 @@ class Controller:
 
     def voltar_home(self):
         self.view.home()
+
+
