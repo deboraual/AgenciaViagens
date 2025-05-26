@@ -49,13 +49,18 @@ class Controller:
                         return
         messagebox.showinfo("Pesquisa", "Nenhum resultado encontrado.")
 
-    def barra_carrinho(self, frame, is_home = False):
+    def barra_carrinho(self, frame, is_home = False, pais=None):
             top_bar = tk.Frame(frame, bg="#505050", height=100)
             top_bar.place(relx=0, rely=0, relwidth=1.0)
+
             voltar_btn = tk.Button(top_bar, text="❌", command=self.voltar_home, bg="red", fg="white")
             voltar_btn.pack(side="left", padx=10, pady=10)
 
-            if is_home:
+            # Carrinho sempre aparece
+            carrinho_btn = tk.Button(top_bar, text="🛒", command=self.abrir_carrinho)
+            carrinho_btn.pack(side="right", padx=10, pady=10)
+
+            if is_home :
                 #adicionar barra de pesquisa
                 self.pesquisa_entry= tk.Entry(top_bar, font=('Arial',12))
                 self.pesquisa_entry.pack(side='left', padx=5, pady=10)
@@ -63,22 +68,14 @@ class Controller:
                 pesquisar_btn= tk.Button(top_bar, text='Pesquisar', command=lambda: self.pesquisar(self.pesquisa_entry.get()))
                 pesquisar_btn.pack(side='left', padx=10, pady=10)
 
-                #botao para compra 
-                comprar_btn = tk.Button(top_bar, text="Comprar", command=self.abrir_carrinho, bg="green", fg="white")
-                comprar_btn.pack(side="right", padx=10, pady=10)
 
-                #botao abrir carrinho
-                carrinho_btn = tk.Button(top_bar, text="🛒", command=self.abrir_carrinho)
-                carrinho_btn.pack(side="right", padx=10, pady=10)
-            else:
+
+            if not is_home and pais is not None:
                 #adicionar para coprar nos paises  
-                comprar_btn = tk.Button(top_bar, text="Comprar", command=self.abrir_carrinho, bg="green", fg="white")
+                comprar_btn = tk.Button(top_bar, text="Comprar", command=lambda: self.comprar_viagem(pais), bg="green", fg="white")
                 comprar_btn.pack(side="right", padx=10, pady=10)
 
-                #botao abrir carrinho
-                carrinho_btn = tk.Button(top_bar, text="🛒", command=self.abrir_carrinho)
-                carrinho_btn.pack(side="right", padx=10, pady=10)
-
+                
 
     def abrir_carrinho(self):
         if not self.carrinho:

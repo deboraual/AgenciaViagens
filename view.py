@@ -228,7 +228,7 @@ class View:
     def home(self):
         if self.frame:
             self.frame.destroy()
-            
+
         self.frame = tk.Frame(self.master, bg='#696969')
         self.frame.master.title('Home')
         self.frame.master.geometry('500x500')
@@ -236,13 +236,10 @@ class View:
         
         #puxar para sima _ faz com que ignore o canvas 
         _, scrollable= self.controller.criar_scrollable_frame(self.frame)
-
-
         self.controller.barra_carrinho(self.frame, is_home=True)
 
-
         mensagem = f"Bem-vindo(a), {self.cliente_login.get_nome()}!"
-        tk.Label(scrollable, text=mensagem, font=("Arial", 15), bg="#696969", fg="#C6C6DC").grid(row=0, column=0, columnspan=2, padx=10, pady=30, sticky='ew')
+        tk.Label(scrollable, text=mensagem, font=("Arial", 15), bg="#696969", fg="#C6C6DC").grid(row=0, column=0, columnspan=2, padx=10, pady=(100,30), sticky='ew')
 
         # Lista de imagens e países
         imagens_info = [
@@ -293,8 +290,8 @@ class View:
 
         self.frame = tk.Frame(self.master, bg="#696969")
         self.frame.pack(fill='both', expand=True)
-        self.controller.barra_carrinho(self.frame)
         _, scroll_frame = self.controller.criar_scrollable_frame(self.frame)
+        self.controller.barra_carrinho(self.frame, is_home=False, pais=paises)
 
 
         self.master.title(f"{paises.nome} - Pontos Turísticos")
