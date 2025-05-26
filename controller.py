@@ -11,6 +11,7 @@ class Controller:
         self.carrinho = []
         self.view = View(master, self)
         self.cart_icon = None
+        self.lista_paises = paises
     
     def criar_scrollable_frame(self, frame):
         canvas = tk.Canvas(frame, bg='#696969', highlightthickness=0)
