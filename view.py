@@ -11,10 +11,12 @@ import requests
 import hashlib
 import os
 
+from datetime import datetime
 from PIL import Image, ImageTk
 from model.Cliente import *
 from model.LinkedClient import *
 from model.Paises import *
+from model.CompanhiaAeria import *
 from controller import *
 
 class View:
@@ -248,7 +250,10 @@ class View:
             {"caminho": "imagens/franca.jpg", "pais_obj": paises[2]},
             {"caminho": "imagens/italia.jpg", "pais_obj": paises[3]},
             {"caminho": "imagens/alemanha.jpg", "pais_obj": paises[4]},
-            # Adiciona mais aqui se necessário
+            {"caminho": "imagens/egito.jpg", "pais_obj": paises[5]},
+            {"caminho": "imagens/japao.jpg", "pais_obj": paises[6]},
+            {"caminho": "imagens/tailandia.jpg", "pais_obj": paises[7]},
+            {"caminho": "imagens/brasil.jpg", "pais_obj": paises[8]},
         ]
 
         self.imagens_tk = []
@@ -351,20 +356,133 @@ class View:
                 tk.Label(texto_frame, text=f"Localização: {cidade.nome}", font=("Arial", 9 ), bg="#808080", fg="#DDDDDD").pack(anchor="w")
                 tk.Label(texto_frame, text=ponto.descricao, font=("Arial", 9), bg="#808080", fg="#DDDDDD", wraplength=250, justify="left").pack(anchor="w", pady=(2, 0))
 
-    
 
     
-    def abrir_carrinho(self):
-        if not self.carrinho:
-            messagebox.showinfo("Carrinho", "O carrinho está vazio.")
+    def pag_voos(self, pais):
+
+        # Cria nova janela para consulta de voos
+        self.janela_voos = tk.Toplevel(self.master)
+        self.janela_voos.title(f'Consulta de Voos para {pais.nome}')
+
+        tk.Label(self.janela_voos, text=f"Voos disponíveis para {pais.nome}", font=("Arial", 16)).pack(pady=10)
+
+        self.pais_atual_voo=pais
+        # Widgets de filtro
+        filtro_frame = tk.Frame(self.janela_voos)
+        filtro_frame.pack(pady=5)
+
+        tk.Label(filtro_frame, text="Preço máximo (€):").grid(row=0, column=0, padx=5)
+        self.preco_max_entry = tk.Entry(filtro_frame, width=8)
+        self.preco_max_entry.grid(row=0, column=1)
+
+        self.direto_var = tk.BooleanVar()
+        tk.Checkbutton(filtro_frame, text="Somente voos diretos", variable=self.direto_var).grid(row=0, column=2, padx=10)
+
+        tk.Button(filtro_frame, text="Filtrar", command=self.atualizar_voos_filtrados).grid(row=0, column=3)
+
+        # Espaço para resultados
+        self.resultado_voos_frame = tk.Frame(self.janela_voos)
+        self.resultado_voos_frame.pack(pady=10)
+
+        self.atualizar_voos_filtrados()  # exibe resultados iniciais
+
+    def atualizar_voos_filtrados(self):
+        for widget in self.resultado_voos_frame.winfo_children():
+            widget.destroy()
+
+        # Leitura de filtros
+        preco_max = self.preco_max_entry.get()
+        direto = self.direto_var.get()
+        try:
+            preco_max = float(preco_max) if preco_max else None
+        except ValueError:
+            preco_max = None
+
+        # Aplica filtros
+        voos_filtrados = self.controller.buscar_voos(
+            pais=self.pais_atual_voo.nome,
+            preco_max=preco_max,
+            direto=direto
+        )
+
+        if not voos_filtrados:
+            tk.Label(self.resultado_voos_frame, text="Nenhum voo disponível com os critérios selecionados.").pack()
             return
 
-        conteudo = ""
-        total_geral = 0
-        for item in self.carrinho:
-            conteudo += f"{item['quantidade']}x {item['pais']} — €{item['total']:.2f}\n"
-            total_geral += item["total"]
+        # Agrupa por companhia
+        companhias = sorted(set(voo.companhia for voo in voos_filtrados))
 
-        conteudo += f"\nTotal geral: €{total_geral:.2f}"
-        messagebox.showinfo("Carrinho", conteudo)
+        self.companhia_var = tk.StringVar(value=companhias[0])
+        self.data_preco_var = tk.StringVar()
+
+        tk.Label(self.resultado_voos_frame, text="Escolha a companhia aérea:").pack()
+        ttk.OptionMenu(self.resultado_voos_frame, self.companhia_var, self.companhia_var.get(), *companhias, command=self.atualizar_datas_voos).pack(pady=5)
+
+        tk.Label(self.resultado_voos_frame, text="Escolha data e preço:").pack()
+        self.menu_datas = ttk.OptionMenu(self.resultado_voos_frame, self.data_preco_var, '')
+        self.menu_datas.pack(pady=5)
+
+        self.voos_filtrados = voos_filtrados
+        self.atualizar_datas_voos(self.companhia_var.get())
+
+        tk.Button(self.resultado_voos_frame, text='Confirmar voo', command=self.confirmar_voo_escolhido).pack(pady=10)
+
+    def atualizar_datas_voos(self, companhia_nome):
+        opcoes = [
+            f'{voo.data} - €{voo.preco}'
+            for voo in self.voos_filtrados
+            if voo.companhia == companhia_nome
+        ]
+
+        self.menu_datas['menu'].delete(0, 'end')
+
+        if not opcoes:
+            self.data_preco_var.set('Sem datas disponíveis')
+            return
+
+        self.data_preco_var.set(opcoes[0])
+        for opcao in opcoes:
+            self.menu_datas['menu'].add_command(
+                label=opcao,
+                command=lambda value=opcao: self.data_preco_var.set(value)
+            )
+
+    def confirmar_voo_escolhido(self):
+        companhia = self.companhia_var.get()
+        data_preco_str = self.data_preco_var.get()
+
+        if '€' not in data_preco_str:
+            messagebox.showwarning('Aviso', 'Por favor, selecione uma data válida.')
+            return
+
+        data_voo, preco = data_preco_str.split("- €")
+        preco = float(preco.strip())
+        messagebox.showinfo('Confirmação', f'Voo confirmado:\nCompanhia: {companhia}\nData: {data_voo}\nPreço: {preco:.2f}€')
+        self.janela_voos.destroy()
+        self.janela_voos.destroy()
     
+    def buscar_voos_por_pais(self, pais):
+        return [voo for voo in self.voos if voo.pais.lower() == pais.lower()]
+
+    def buscar_voos_ate_preco(self, preco_max):
+        return [voo for voo in self.voos if voo.preco <= preco_max]
+
+    def ordenar_voos_por_preco(self):
+        return sorted(self.voos, key=lambda v: v.preco)
+    
+
+    def ordenar_voos_por_data(self):
+        return sorted(self.voos, key=lambda v: datetime.strptime(v.data, "%d/%m/%Y"))
+
+    def voos_diretos(self):
+        return [voo for voo in self.voos if not voo.escala]
+
+    def buscar_voos(self, pais=None, preco_max=None, direto=None):
+        resultado = self.voos
+        if pais:
+            resultado = [v for v in resultado if v.pais.lower() == pais.lower()]
+        if preco_max is not None:
+            resultado = [v for v in resultado if v.preco <= preco_max]
+        if direto is not None:
+            resultado = [v for v in resultado if v.escala != direto]
+        return resultado

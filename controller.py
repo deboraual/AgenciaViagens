@@ -75,8 +75,11 @@ class Controller:
                 #adicionar para coprar nos paises  
                 comprar_btn = tk.Button(top_bar, text="Comprar", command=lambda: self.comprar_viagem(pais), bg="green", fg="white")
                 comprar_btn.pack(side="right", padx=10, pady=10)
+                #adicionar para coprar nos paises  
+                comprar_btn = tk.Button(top_bar, text="voos", command=lambda: self.view.pag_voos(pais), bg="green", fg="white")
+                comprar_btn.pack(side="right", padx=10, pady=10)
 
-                
+
 
     def abrir_carrinho(self):
         if not self.carrinho:
@@ -117,3 +120,37 @@ class Controller:
         self.view.home()
 
 
+    def confirmar_voo_para_pais(self, nome_pais):
+        nome_companhia = self.companhia_var.get()
+        data_voo = self.data_entry.get()
+
+        if not data_voo:
+            messagebox.showwarning("Aviso", "Por favor, insira uma data.")
+            return
+
+        for companhia in companhias:
+            if companhia.nome == nome_companhia:
+                preco = companhia.destinos.get(nome_pais)
+                if preco:
+                    messagebox.showinfo(
+                        "Detalhes do Voo",
+                        f"Companhia: {nome_companhia}\nDestino: {nome_pais}\nData: {data_voo}\nPreço: €{preco:.2f}"
+                    )
+                    return
+
+        messagebox.showerror("Erro", "Companhia ou destino não encontrado.")
+
+    def buscar_voos(self, pais=None, preco_max=None, direto=None):
+        resultado = self.voos_disponiveis
+        if pais:
+            resultado = [v for v in resultado if v.pais.lower() == pais.lower()]
+        if preco_max is not None:
+            resultado = [v for v in resultado if v.preco <= preco_max]
+        if direto is not None:
+            resultado = [v for v in resultado if v.escala != direto]
+        return resultado
+
+
+    def limpar_frame(self):
+        for widget in self.frame.winfo_children():
+            widget.destroy()

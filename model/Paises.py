@@ -64,4 +64,36 @@ berlim.adicionar_ponto_turistico(PontoTuristico("Portão de Brandemburgo", "Monu
 berlim.adicionar_ponto_turistico(PontoTuristico("Muro de Berlim", "Remanescente da divisão da cidade."))
 alemanha.adicionar_cidade(berlim)
 
-paises = [portugal, espanha, franca, italia, alemanha]
+egito = Pais("Egito", 315)
+cairo = Cidade("Cairo")
+cairo.adicionar_ponto_turistico(PontoTuristico("Pirâmides de Gizé", "Um dos marcos mais icônicos do mundo, construído há mais de 4.500 anos."))
+egito.adicionar_cidade(cairo)
+luxor = Cidade("Luxor")
+luxor.adicionar_ponto_turistico(PontoTuristico("Templo de Karnak", "Um imenso complexo de templos dedicado aos deuses egípcios, especialmente Amon-Rá."))
+egito.adicionar_cidade(luxor)
+
+japao = Pais("Japão", 1000)
+toquio = Cidade("Tóquio")
+toquio.adicionar_ponto_turistico(PontoTuristico("Templo Senso-ji", "O templo budista mais antigo da cidade, localizado em Asakusa."))
+japao.adicionar_cidade(toquio)
+kyoto = Cidade("kyoto")
+kyoto.adicionar_ponto_turistico(PontoTuristico("Pavilhão Dourado", "Um templo zen coberto de folhas de ouro, rodeado por um lago sereno."))
+japao.adicionar_cidade(kyoto)
+
+tailandia = Pais("Tailândia", 1020)
+bangkok = Cidade("Bangkok")
+bangkok.adicionar_ponto_turistico(PontoTuristico("Grande Palácio", "Complexo real com arquitetura tailandesa tradicional e o Buda de Esmeralda."))
+tailandia.adicionar_cidade(bangkok)
+chiang_mai = Cidade("Chiang Mai")
+chiang_mai.adicionar_ponto_turistico(PontoTuristico("Wat Phra That Doi Suthep", "Templo sagrado em uma montanha com vista para a cidade"))
+tailandia.adicionar_cidade(chiang_mai)
+
+brasil = Pais("Brasil", 1045)
+rio_de_janeiro = Cidade("Rio de Janeiro")
+rio_de_janeiro.adicionar_ponto_turistico(PontoTuristico("Cristo Redentor", "Estátua icônica de Jesus Cristo no topo do Corcovado."))
+brasil.adicionar_cidade(rio_de_janeiro)
+foz_do_iguaçu = Cidade("Foz do Iguaçu")
+foz_do_iguaçu.adicionar_ponto_turistico(PontoTuristico("Cataratas do Iguaçu", "Conjunto de quedas d'água na fronteira com a Argentina"))
+brasil.adicionar_cidade(foz_do_iguaçu)
+
+paises = [portugal, espanha, franca, italia, alemanha, egito, japao, tailandia, brasil]
