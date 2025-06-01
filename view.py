@@ -291,6 +291,9 @@ class View:
     def pag_paises(self, paises):
         if self.frame:
             self.frame.destroy()
+        
+        self.limpar_tela()  # limpa antes de mostrar a nova página
+
 
         self.frame = tk.Frame(self.master, bg="#696969")
         self.frame.pack(fill='both', expand=True)
@@ -358,7 +361,8 @@ class View:
 
     
     def pag_voos(self, pais, voos):
-        
+        self.limpar_tela()  # limpa antes de mostrar a nova página
+
         frame = tk.Frame(self.master, bg="#696969")
         frame.pack(fill="both", expand=True)
 
@@ -370,12 +374,29 @@ class View:
         btn_voltar.place(x=10, y=10)  # Posiciona no topo-esquerdo com um pouco de margem
 
         canvas, scrollable_frame = self.controller.criar_scrollable_frame(frame)
+        
+        
+        header_frame = tk.Frame(scrollable_frame, bg="#696969")
+        header_frame.pack(fill="x", pady=(10, 0))
+
+        btn_fechar = tk.Button(
+            header_frame,
+            text="❌",
+            font=("Arial", 10, "bold"),
+            width=3,
+            height=1,
+            bg="red",
+            fg="white",
+            command=lambda: self.pag_paises(pais)
+        )
+        btn_fechar.pack(side="left", padx=10)
 
         if not voos:
             tk.Label(scrollable_frame, text="Nenhum voo disponível.", bg="#696969", fg="white", font=("Arial", 14)).pack(pady=20)
             return
 
         for voo in voos:
+            
             container = tk.Frame(scrollable_frame, bg="#808080", pady=10, padx=10)
             container.pack(fill="x", pady=5, padx=10)
 
@@ -385,14 +406,16 @@ class View:
             tk.Button(
                 container,
                 text="Adicionar ao Carrinho",
-                command=lambda v=voo: self.controller.comprar_viagem(v),
+                command=lambda v=voo, p=pais: self.controller.comprar_viagem(p,v) ,
                 bg="green",
                 fg="white"
             ).pack(side="right")
-            btn_comprar = tk.Button(scrollable_frame, text="Comprar", command=lambda: self.controller.comprar_viagem(pais,voo))
-            btn_comprar.pack()
-
+            
 
 
     def voltar_paises(self):
         self.view.pag_paises() 
+
+    def limpar_tela(self):
+        for widget in self.master.winfo_children():
+            widget.destroy()

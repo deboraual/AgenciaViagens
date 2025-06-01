@@ -15,7 +15,10 @@ class Controller:
             CompanhiaAeria('iberia'),
             CompanhiaAeria('air_france'),
             CompanhiaAeria('lufthansa'),
-            CompanhiaAeria('egyptair')
+            CompanhiaAeria('egyptair'),
+            CompanhiaAeria('ana'),
+            CompanhiaAeria('thairways'),
+            CompanhiaAeria('latam'),
         ]
         for companhia in companhias:
             self.voos.extend(companhia.voos)
@@ -85,9 +88,6 @@ class Controller:
 
             if not is_home and pais is not None:
                 voos = self.voos_pais(pais.nome)
-                if voos:
-                    voo = voos[0]
-                    tk.Button(top_bar, text="Comprar", command=lambda: self.comprar_viagem(pais, voo), bg="green", fg="white").pack(side="right", padx=10, pady=10)
                 #adicionar para coprar nos paises  
                 comprar_btn = tk.Button(top_bar, text="voos",command=lambda: self.abrir_pag_voos(pais),bg="green", fg="white")
                 comprar_btn.pack(side="right", padx=10, pady=10)
