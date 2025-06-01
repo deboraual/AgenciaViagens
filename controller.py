@@ -1,5 +1,6 @@
 from view import *
 from model.Paises import *
+from model.CompanhiaAeria import *
 
 import tkinter as tk
 import os
@@ -8,10 +9,21 @@ from PIL import Image, ImageTk
 class Controller:
     def __init__(self, master):
        
+        self.voos = []
+        self.companhias = [
+            CompanhiaAeria("tap"),
+            CompanhiaAeria('iberia'),
+            CompanhiaAeria('air_france'),
+            CompanhiaAeria('lufthansa'),
+            CompanhiaAeria('egyptair')
+        ]
+        for companhia in companhias:
+            self.voos.extend(companhia.voos)
         self.carrinho = []
         self.view = View(master, self)
         self.cart_icon = None
         self.lista_paises = paises
+        self.voos_disponiveis=self.companhias[0].carregar_voos()
     
     def criar_scrollable_frame(self, frame):
         canvas = tk.Canvas(frame, bg='#696969', highlightthickness=0)
@@ -72,14 +84,13 @@ class Controller:
 
 
             if not is_home and pais is not None:
+                voos = self.voos_pais(pais.nome)
+                if voos:
+                    voo = voos[0]
+                    tk.Button(top_bar, text="Comprar", command=lambda: self.comprar_viagem(pais, voo), bg="green", fg="white").pack(side="right", padx=10, pady=10)
                 #adicionar para coprar nos paises  
-                comprar_btn = tk.Button(top_bar, text="Comprar", command=lambda: self.comprar_viagem(pais), bg="green", fg="white")
+                comprar_btn = tk.Button(top_bar, text="voos",command=lambda: self.abrir_pag_voos(pais),bg="green", fg="white")
                 comprar_btn.pack(side="right", padx=10, pady=10)
-                #adicionar para coprar nos paises  
-                comprar_btn = tk.Button(top_bar, text="voos", command=lambda: self.view.pag_voos(pais), bg="green", fg="white")
-                comprar_btn.pack(side="right", padx=10, pady=10)
-
-
 
     def abrir_carrinho(self):
         if not self.carrinho:
@@ -95,25 +106,28 @@ class Controller:
         conteudo += f"\nTotal geral: €{total_geral:.2f}"
         messagebox.showinfo("Carrinho", conteudo)
 
-    def comprar_viagem(self, pais):
+    def comprar_viagem(self, pais, voo):
+        
         quantidade = simpledialog.askinteger(
-            "Compra de Passagens",
-            f"Quantas passagens deseja comprar para {pais.nome}?",
+            "Compra de voos",
+            f"Para quantas pessoas deseja comprar esta viagem para: {voo.pais} com {voo.companhia}?",
             minvalue=1,
             parent=self.view.master
         )
 
         if quantidade:
-            total = pais.custo_viagem * quantidade
+            total = voo.preco * quantidade
             self.carrinho.append({
-                "pais": pais.nome,
-                "quantidade": quantidade,
-                "total": total
+                "pais": voo.pais,
+                "companhia": voo.companhia,
+                'data': voo.data,
+                'quantidade':quantidade,
+                'total': total
             })
 
             messagebox.showinfo(
                 "Compra Realizada",
-                f"{quantidade} passagem(ns) para {pais.nome} adicionada(s) ao carrinho.\nTotal: €{total:.2f}"
+                f"{quantidade} passagem(ns) para {voo.pais} adicionada(s) ao carrinho.\nTotal: €{total:.2f}"
             )
 
     def voltar_home(self):
@@ -140,17 +154,26 @@ class Controller:
 
         messagebox.showerror("Erro", "Companhia ou destino não encontrado.")
 
-    def buscar_voos(self, pais=None, preco_max=None, direto=None):
-        resultado = self.voos_disponiveis
-        if pais:
-            resultado = [v for v in resultado if v.pais.lower() == pais.lower()]
-        if preco_max is not None:
-            resultado = [v for v in resultado if v.preco <= preco_max]
-        if direto is not None:
-            resultado = [v for v in resultado if v.escala != direto]
-        return resultado
+    def voos_pais(self, nome_pais):
+        return [v for v in self.voos_disponiveis if v.pais.lower() == nome_pais.lower()]
+   
+    def abrir_pag_voos(self, pais):
+        voos = self.voos_pais(pais.nome)
+        self.view.pag_voos(pais, voos)
 
 
     def limpar_frame(self):
         for widget in self.frame.winfo_children():
             widget.destroy()
+
+    def buscar_voos(self, destino=None, data=None):
+        voos_filtrados = []
+
+        for voo in self.voos_disponiveis:
+            if destino and destino.lower() not in voo.pais.lower():
+                continue
+            if data and data != voo.data:
+                continue
+            voos_filtrados.append(voo)
+
+        return voos_filtrados
